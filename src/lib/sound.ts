@@ -1,9 +1,6 @@
 let ctx: AudioContext | null = null
-let unlocked = false
-// Per-URL caches
 const bufferMap = new Map<string, AudioBuffer>()
 const loadingMap = new Map<string, Promise<AudioBuffer>>()
-const pendingMap = new Map<string, number>()
 
 type Window = globalThis.Window &
   typeof globalThis & { webkitAudioContext: AudioContext }
@@ -42,7 +39,6 @@ export async function unlockAudio() {
   if (audioCtx.state !== 'running') {
     await audioCtx.resume()
   }
-  unlocked = true
 }
 
 function makeSource(url: string): AudioBufferSourceNode | null {
@@ -71,44 +67,10 @@ async function playNow(url: string): Promise<boolean> {
   }
 }
 
-function drainPending() {
-  if (pendingMap.size === 0) return
-  for (const [url, count] of pendingMap.entries()) {
-    if (!count || count <= 0) continue
-    pendingMap.set(url, 0)
-    // play sequentially with slight spacing per URL
-    let i = 0
-    const tick = async () => {
-      if (i >= count) return
-      const ok = await playNow(url)
-      i++
-      setTimeout(tick, ok ? 180 : 300)
-    }
-    tick()
-  }
-}
-
-export async function playChime(url?: string) {
-  if (!url) return
+export async function playChime(url: string) {
   await initSound(url)
-  if (!unlocked) {
-    const prev = pendingMap.get(url) ?? 0
-    pendingMap.set(url, prev + 1)
-    return
-  }
-  // Try to play immediately even if hidden; some browsers will allow it
-  const okImmediate = await playNow(url)
-  if (!okImmediate) {
-    const prev = pendingMap.get(url) ?? 0
-    pendingMap.set(url, prev + 1)
-  }
+  // After the app's first user interaction, the audio context is resumed.
+  // Simply attempt to play now; if it fails, we silently ignore.
+  await playNow(url)
 }
 
-function handleVisibility() {
-  if (!document.hidden) {
-    drainPending()
-  }
-}
-
-document.addEventListener('visibilitychange', handleVisibility)
-window.addEventListener('focus', handleVisibility)

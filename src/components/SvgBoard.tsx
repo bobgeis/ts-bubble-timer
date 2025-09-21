@@ -60,15 +60,7 @@ function makeSvgFillCircle(shape: Shape) {
 
 function makeSvgFillArc(shape: Shape) {
   const { x, y, r, t, tM } = shape
-  const a = radians(t / tM)
-  const [x2, y2] = transRa(x, y, r, -(a + halfPi))
-  const flag = a > pi ? 1 : 0
-  const d = [
-    `M ${x}, ${y}`,
-    `v${-r}`,
-    `A ${r}, ${r}, 0, ${flag}, 0, ${x2}, ${y2}`,
-    'Z',
-  ].join(' ')
+  const d = sectorPath(x, y, r, t / tM)
   return <path d={d} fill={fillColorForShape(shape)} />
 }
 
@@ -200,7 +192,7 @@ function MouseCircle() {
 
 function getBgColor(mode: 'run' | 'pause', num: number, red: number) {
   if (mode === 'pause') return '#888855'
-  if (num === 0) return '#555555' // fixed missing # from original
+  if (num === 0) return '#555555'
   if (red === num) return '#885555'
   return '#DFDFD0'
 }

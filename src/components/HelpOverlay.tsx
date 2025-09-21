@@ -46,7 +46,8 @@ export default function HelpOverlay() {
         >
           <li>Click and drag to create a bubble</li>
           <li>Click a bubble to pause or resume it</li>
-          <li>Shift + click a bubble to remove it</li>
+          <li>Shift + click a bubble to delete it</li>
+          <li>Alt + click and drag a bubble to move it</li>
           <li>Press Space to pause or resume all bubbles</li>
           <li>Press Enter to save current bubbles</li>
         </ul>

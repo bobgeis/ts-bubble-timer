@@ -21,7 +21,6 @@ import { audioFile } from './state/store'
 function App() {
   useEffect(() => {
     initFromLocalStorage()
-    initSound(audioFile)
     // key handlers
     const onKeyDown = (e: KeyboardEvent) => {
       unlockOnFirstInteraction()
@@ -45,16 +44,19 @@ function App() {
       if (unlocked) return
       unlocked = true
       unlockAudio()
-      // remove these listeners right away
-      document.removeEventListener('pointerdown', unlockOnFirstInteraction)
-      document.removeEventListener('touchstart', unlockOnFirstInteraction)
+      initSound(audioFile)
     }
+
+    // add listeners
     document.addEventListener('pointerdown', unlockOnFirstInteraction, { once: true })
     document.addEventListener('touchstart', unlockOnFirstInteraction, { once: true })
     document.addEventListener('keydown', onKeyDown)
     document.addEventListener('keyup', onKeyUp)
+
     // raf loop
     const stop = startRAFWithDt((dt) => tick(dt))
+
+    // rm listeners on cleanup
     return () => {
       document.removeEventListener('pointerdown', unlockOnFirstInteraction)
       document.removeEventListener('touchstart', unlockOnFirstInteraction)
@@ -67,9 +69,11 @@ function App() {
   return (
     <>
       <SvgBoard
-        onPointerDown={(e) => pointerDown({ x: e.clientX, y: e.clientY })}
-        onPointerMove={(e) => pointerMove({ x: e.clientX, y: e.clientY })}
-        onPointerUp={(e) => pointerUp({ x: e.clientX, y: e.clientY, shiftKey: e.shiftKey })}
+        onPointerDown={(e) => pointerDown({ x: e.clientX, y: e.clientY, altKey: e.altKey })}
+        onPointerMove={(e) => pointerMove({ x: e.clientX, y: e.clientY, altKey: e.altKey })}
+        onPointerUp={(e) =>
+          pointerUp({ x: e.clientX, y: e.clientY, shiftKey: e.shiftKey, altKey: e.altKey })
+        }
         onPointerLeave={() => pointerLeave()}
       />
       <HelpOverlay />

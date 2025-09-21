@@ -31,6 +31,8 @@ export type MouseState = {
   mult?: number // duration multiplier
   lastAngle?: number // previous frame absolute angle [-pi, pi]
   angleAcc?: number // accumulated angle (unwrapped)
+  movingIndex?: number // Moving existing shape (Alt-click and drag)
+  moveOffset?: { dx: number; dy: number }
 }
 
 export type Store = {
@@ -79,8 +81,11 @@ const LS_KEY = 'teatime'
 export function initFromLocalStorage() {
   const saved = getLocalStorage<Shape[]>(LS_KEY, [])
   if (Array.isArray(saved)) {
-    // basic validation
     store.shapes = saved
+    if (saved.length > 0) {
+      // When restoring a session, start in paused mode to avoid immediate ticking
+      store.mode = 'pause'
+    }
   }
 }
 
@@ -108,7 +113,34 @@ export function setHelpVisible(visible: boolean) {
   store.helpVisible = visible
 }
 
-export function pointerDown(p: Point) {
+export function pointerDown(p: Point & { altKey?: boolean }) {
+  // If Alt is held and we're on an existing shape, begin moving that shape
+  if (p.altKey) {
+    let idx = -1
+    for (let i = store.shapes.length - 1; i >= 0; i--) {
+      if (withinShape(store.shapes[i], p)) {
+        idx = i
+        break
+      }
+    }
+    if (idx !== -1) {
+      const s = store.shapes[idx]
+      // Move the selected shape to the end so it renders on top while dragging
+      if (idx !== store.shapes.length - 1) {
+        const shapes = store.shapes.slice()
+        shapes.splice(idx, 1)
+        shapes.push(s)
+        store.shapes = shapes
+        idx = store.shapes.length - 1
+      }
+      store.mouse = {
+        movingIndex: idx,
+        moveOffset: { dx: p.x - s.x, dy: p.y - s.y },
+      }
+      return
+    }
+  }
+  // Othwerwise, begin creating a new shape
   store.mouse = {
     start: { ...p },
     angle: 0,
@@ -118,7 +150,19 @@ export function pointerDown(p: Point) {
   }
 }
 
-export function pointerMove(p: Point) {
+export function pointerMove(p: Point & { altKey?: boolean }) {
+  // If moving an existing shape, update its position
+  const movingIdx = store.mouse?.movingIndex
+  if (typeof movingIdx === 'number' && movingIdx >= 0) {
+    const off = store.mouse?.moveOffset ?? { dx: 0, dy: 0 }
+    const nx = p.x - off.dx
+    const ny = p.y - off.dy
+    const shapes = store.shapes.slice()
+    const s = shapes[movingIdx]
+    if (s) shapes[movingIdx] = { ...s, x: nx, y: ny }
+    store.shapes = shapes
+    return
+  }
   if (!store.mouse?.start) return
   const start = store.mouse.start
   const angle = angleFromUpCwBetween(start, p)
@@ -151,6 +195,11 @@ export function pointerLeave() {
 export function pointerUp(
   p: Point & { shiftKey?: boolean; ctrlKey?: boolean; altKey?: boolean },
 ) {
+  // If moving a shape, end move and exit
+  if (typeof store.mouse?.movingIndex === 'number') {
+    store.mouse = null
+    return
+  }
   const start = store.mouse?.start
   if (!start) return
   const r = distance(start, p)
@@ -163,7 +212,6 @@ export function pointerUp(
     // apply adjusted duration without changing radius
     store.shapes = [...store.shapes, { ...shape, tM, t }]
   } else {
-    // maybe click shape: toggle or remove (with shift)
     maybeClickShape(p)
   }
   store.mouse = null
