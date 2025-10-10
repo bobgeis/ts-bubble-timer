@@ -9,8 +9,8 @@ export default function MutedIndicator() {
     <div
       style={{
         position: 'fixed',
-        bottom: 16,
-        right: 16,
+        top: 16,
+        left: 16,
         fontSize: 16,
         opacity: 0.6,
         pointerEvents: 'none',
