@@ -42,6 +42,7 @@ export type Store = {
   hoverIndex: number | null
   shiftActive: boolean
   helpVisible: boolean
+  muted: boolean
 }
 
 export const audioFile = `${import.meta.env.BASE_URL}audio/bubbles.mp3`
@@ -74,9 +75,11 @@ export const store = proxy<Store>({
   hoverIndex: null,
   shiftActive: false,
   helpVisible: false,
+  muted: false,
 })
 
 const LS_KEY = 'teatime'
+const LS_MUTED_KEY = 'teatime-muted'
 
 export function initFromLocalStorage() {
   const saved = getLocalStorage<Shape[]>(LS_KEY, [])
@@ -87,6 +90,8 @@ export function initFromLocalStorage() {
       store.mode = 'pause'
     }
   }
+  const muted = getLocalStorage<boolean>(LS_MUTED_KEY, false)
+  store.muted = muted
 }
 
 export function saveToLocalStorage() {
@@ -111,6 +116,11 @@ export function setShiftActive(active: boolean) {
 
 export function setHelpVisible(visible: boolean) {
   store.helpVisible = visible
+}
+
+export function toggleMuted() {
+  store.muted = !store.muted
+  setLocalStorage(LS_MUTED_KEY, store.muted)
 }
 
 export function pointerDown(p: Point & { altKey?: boolean }) {
@@ -269,6 +279,6 @@ export function tick(dt: number) {
   const red2 = countRed(next)
   store.shapes = next
   if (red2 > red) {
-    playChime(audioFile)
+    playChime(audioFile, store.muted)
   }
 }

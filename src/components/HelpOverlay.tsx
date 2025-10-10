@@ -50,6 +50,7 @@ export default function HelpOverlay() {
           <li>Alt + click and drag a bubble to move it</li>
           <li>Press Space to pause or resume all bubbles</li>
           <li>Press Enter to save current bubbles</li>
+          <li>Press M to mute or unmute sound</li>
         </ul>
         <div
           style={{

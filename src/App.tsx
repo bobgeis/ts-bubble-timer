@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import './App.css'
 import SvgBoard from './components/SvgBoard'
 import HelpOverlay from './components/HelpOverlay'
+import MutedIndicator from './components/MutedIndicator'
 import {
   pointerDown,
   pointerMove,
@@ -13,6 +14,7 @@ import {
   tick,
   setShiftActive,
   setHelpVisible,
+  toggleMuted,
 } from './state/store'
 import { startRAFWithDt } from './lib/browser'
 import { initSound, unlockAudio } from './lib/sound'
@@ -36,6 +38,8 @@ function App() {
         saveToLocalStorage()
       } else if (e.key === 'Escape') {
         setHelpVisible(false)
+      } else if (e.key === 'm' || e.key === 'M') {
+        toggleMuted()
       }
     }
 
@@ -48,8 +52,12 @@ function App() {
     }
 
     // add listeners
-    document.addEventListener('pointerdown', unlockOnFirstInteraction, { once: true })
-    document.addEventListener('touchstart', unlockOnFirstInteraction, { once: true })
+    document.addEventListener('pointerdown', unlockOnFirstInteraction, {
+      once: true,
+    })
+    document.addEventListener('touchstart', unlockOnFirstInteraction, {
+      once: true,
+    })
     document.addEventListener('keydown', onKeyDown)
     document.addEventListener('keyup', onKeyUp)
 
@@ -69,14 +77,24 @@ function App() {
   return (
     <>
       <SvgBoard
-        onPointerDown={(e) => pointerDown({ x: e.clientX, y: e.clientY, altKey: e.altKey })}
-        onPointerMove={(e) => pointerMove({ x: e.clientX, y: e.clientY, altKey: e.altKey })}
+        onPointerDown={(e) =>
+          pointerDown({ x: e.clientX, y: e.clientY, altKey: e.altKey })
+        }
+        onPointerMove={(e) =>
+          pointerMove({ x: e.clientX, y: e.clientY, altKey: e.altKey })
+        }
         onPointerUp={(e) =>
-          pointerUp({ x: e.clientX, y: e.clientY, shiftKey: e.shiftKey, altKey: e.altKey })
+          pointerUp({
+            x: e.clientX,
+            y: e.clientY,
+            shiftKey: e.shiftKey,
+            altKey: e.altKey,
+          })
         }
         onPointerLeave={() => pointerLeave()}
       />
       <HelpOverlay />
+      <MutedIndicator />
     </>
   )
 }

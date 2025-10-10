@@ -67,7 +67,8 @@ async function playNow(url: string): Promise<boolean> {
   }
 }
 
-export async function playChime(url: string) {
+export async function playChime(url: string, muted = false) {
+  if (muted) return
   await initSound(url)
   // After the app's first user interaction, the audio context is resumed.
   // Simply attempt to play now; if it fails, we silently ignore.
