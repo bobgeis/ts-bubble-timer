@@ -80,18 +80,17 @@ export const store = proxy<Store>({
 
 const LS_KEY = 'teatime'
 const LS_MUTED_KEY = 'teatime-muted'
+const LS_MODE_KEY = 'teatime-mode'
 
 export function initFromLocalStorage() {
   const saved = getLocalStorage<Shape[]>(LS_KEY, [])
   if (Array.isArray(saved)) {
     store.shapes = saved
-    if (saved.length > 0) {
-      // When restoring a session, start in paused mode to avoid immediate ticking
-      store.mode = 'pause'
-    }
   }
   const muted = getLocalStorage<boolean>(LS_MUTED_KEY, false)
   store.muted = muted
+  const mode = getLocalStorage<Mode>(LS_MODE_KEY, 'run')
+  store.mode = mode
 }
 
 export function saveToLocalStorage() {
@@ -104,6 +103,7 @@ export function clearLocalStorage() {
 
 export function toggleMode() {
   store.mode = store.mode === 'run' ? 'pause' : 'run'
+  setLocalStorage(LS_MODE_KEY, store.mode)
 }
 
 export function setHoveredIndex(i: number | null) {
