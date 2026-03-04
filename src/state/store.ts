@@ -24,6 +24,12 @@ export type Shape = {
 
 export type Mode = 'run' | 'pause'
 
+export type TimerClipboard = {
+  r: number
+  state: 'on' | 'off'
+  tM: number
+}
+
 export type MouseState = {
   start?: Point
   stop?: Point
@@ -39,10 +45,13 @@ export type Store = {
   mode: Mode
   shapes: Shape[]
   mouse?: MouseState | null
+  cursor: Point | null
   hoverIndex: number | null
   shiftActive: boolean
   helpVisible: boolean
   muted: boolean
+  copiedTimer: TimerClipboard | null
+  copyFlashVisible: boolean
 }
 
 export const audioFile = `${import.meta.env.BASE_URL}audio/bubbles.mp3`
@@ -72,15 +81,30 @@ export const store = proxy<Store>({
   mode: 'run',
   shapes: [],
   mouse: null,
+  cursor: null,
   hoverIndex: null,
   shiftActive: false,
   helpVisible: false,
   muted: false,
+  copiedTimer: null,
+  copyFlashVisible: false,
 })
 
 const LS_KEY = 'teatime'
 const LS_MUTED_KEY = 'teatime-muted'
 const LS_MODE_KEY = 'teatime-mode'
+let copyFlashTimeout: ReturnType<typeof setTimeout> | null = null
+
+function flashCopyIndicator() {
+  store.copyFlashVisible = true
+  if (copyFlashTimeout) {
+    clearTimeout(copyFlashTimeout)
+  }
+  copyFlashTimeout = setTimeout(() => {
+    store.copyFlashVisible = false
+    copyFlashTimeout = null
+  }, 950)
+}
 
 export function initFromLocalStorage() {
   const saved = getLocalStorage<Shape[]>(LS_KEY, [])
@@ -110,6 +134,10 @@ export function setHoveredIndex(i: number | null) {
   store.hoverIndex = i
 }
 
+export function setCursorPosition(p: Point | null) {
+  store.cursor = p
+}
+
 export function setShiftActive(active: boolean) {
   store.shiftActive = active
 }
@@ -121,6 +149,48 @@ export function setHelpVisible(visible: boolean) {
 export function toggleMuted() {
   store.muted = !store.muted
   setLocalStorage(LS_MUTED_KEY, store.muted)
+}
+
+export function copyHoveredTimer() {
+  let i = store.hoverIndex
+  if (i === null || i < 0 || i >= store.shapes.length) {
+    const cursor = store.cursor
+    if (cursor) {
+      i = getTopmostShapeIndexAtPoint(cursor)
+    }
+  }
+  if (i === null || i < 0 || i >= store.shapes.length) {
+    return false
+  }
+  const s = store.shapes[i]
+  store.copiedTimer = {
+    r: s.r,
+    state: s.state,
+    tM: s.tM,
+  }
+  flashCopyIndicator()
+  return true
+}
+
+export function pasteCopiedTimer() {
+  const copied = store.copiedTimer
+  const cursor = store.cursor
+  if (!copied || !cursor) {
+    return false
+  }
+
+  store.shapes = [
+    ...store.shapes,
+    {
+      x: cursor.x,
+      y: cursor.y,
+      r: copied.r,
+      state: copied.state,
+      t: copied.tM,
+      tM: copied.tM,
+    },
+  ]
+  return true
 }
 
 export function pointerDown(p: Point & { altKey?: boolean }) {
@@ -229,6 +299,15 @@ export function pointerUp(
 
 function withinShape(shape: Shape, p: Point) {
   return shape.r > distance({ x: shape.x, y: shape.y }, p)
+}
+
+function getTopmostShapeIndexAtPoint(p: Point): number | null {
+  for (let i = store.shapes.length - 1; i >= 0; i--) {
+    if (withinShape(store.shapes[i], p)) {
+      return i
+    }
+  }
+  return null
 }
 
 function maybeClickShape(p: Point & { shiftKey?: boolean }) {

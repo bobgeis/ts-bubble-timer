@@ -40,3 +40,33 @@
 .read-the-docs {
   color: #888;
 }
+
+.copy-indicator {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1100;
+  font-size: 18px;
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  animation: copy-indicator-fade 950ms ease-out forwards;
+}
+
+@keyframes copy-indicator-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  10% {
+    opacity: 0.92;
+    transform: translateY(0);
+  }
+  70% {
+    opacity: 0.92;
+  }
+  100% {
+    opacity: 0;
+  }
+}

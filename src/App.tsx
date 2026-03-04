@@ -3,7 +3,11 @@ import './App.css'
 import SvgBoard from './components/SvgBoard'
 import HelpOverlay from './components/HelpOverlay'
 import MutedIndicator from './components/MutedIndicator'
+import CopyIndicator from './components/CopyIndicator'
 import {
+  audioFile,
+  copyHoveredTimer,
+  pasteCopiedTimer,
   pointerDown,
   pointerMove,
   pointerLeave,
@@ -14,11 +18,11 @@ import {
   tick,
   setShiftActive,
   setHelpVisible,
+  setCursorPosition,
   toggleMuted,
 } from './state/store'
 import { startRAFWithDt } from './lib/browser'
 import { initSound, unlockAudio } from './lib/sound'
-import { audioFile } from './state/store'
 
 function App() {
   useEffect(() => {
@@ -40,6 +44,10 @@ function App() {
         setHelpVisible(false)
       } else if (e.key === 'm' || e.key === 'M') {
         toggleMuted()
+      } else if (e.key === 'c' || e.key === 'C') {
+        copyHoveredTimer()
+      } else if (e.key === 'v' || e.key === 'V') {
+        pasteCopiedTimer()
       }
     }
 
@@ -77,12 +85,14 @@ function App() {
   return (
     <>
       <SvgBoard
-        onPointerDown={(e) =>
+        onPointerDown={(e) => {
+          setCursorPosition({ x: e.clientX, y: e.clientY })
           pointerDown({ x: e.clientX, y: e.clientY, altKey: e.altKey })
-        }
-        onPointerMove={(e) =>
+        }}
+        onPointerMove={(e) => {
+          setCursorPosition({ x: e.clientX, y: e.clientY })
           pointerMove({ x: e.clientX, y: e.clientY, altKey: e.altKey })
-        }
+        }}
         onPointerUp={(e) =>
           pointerUp({
             x: e.clientX,
@@ -91,10 +101,14 @@ function App() {
             altKey: e.altKey,
           })
         }
-        onPointerLeave={() => pointerLeave()}
+        onPointerLeave={() => {
+          setCursorPosition(null)
+          pointerLeave()
+        }}
       />
       <HelpOverlay />
       <MutedIndicator />
+      <CopyIndicator />
     </>
   )
 }

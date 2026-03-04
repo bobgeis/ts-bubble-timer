@@ -51,6 +51,8 @@ export default function HelpOverlay() {
           <li>Press Space to pause or resume all bubbles</li>
           <li>Press Enter to save current bubbles</li>
           <li>Press M to mute or unmute sound</li>
+          <li>Hover a bubble and press C to copy its timer</li>
+          <li>Move cursor and press V to paste copied timer</li>
         </ul>
         <div
           style={{
